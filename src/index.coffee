@@ -21,5 +21,5 @@ module.exports = class EmblemCompiler
 
   include: [
     (sysPath.join __dirname, '..', 'vendor',
-      'handlebars.runtime.js')
+      'handlebars.runtime-1.0.rc.3.js')
   ]

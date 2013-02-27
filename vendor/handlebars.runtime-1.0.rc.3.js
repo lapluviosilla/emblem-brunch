@@ -24,12 +24,17 @@ THE SOFTWARE.
 
 // lib/handlebars/base.js
 
-/*jshint eqnull:true*/
-this.Handlebars = {};
+var Handlebars = {};
 
 (function(Handlebars) {
 
-Handlebars.VERSION = "1.0.rc.2";
+Handlebars.VERSION = "1.0.0-rc.3";
+Handlebars.COMPILER_REVISION = 2;
+
+Handlebars.REVISION_CHANGES = {
+  1: '<= 1.0.rc.2', // 1.0.rc.2 is actually rev2 but doesn't report it
+  2: '>= 1.0.0-rc.3'
+};
 
 Handlebars.helpers  = {};
 Handlebars.partials = {};
@@ -56,8 +61,6 @@ var toString = Object.prototype.toString, functionType = "[object Function]";
 Handlebars.registerHelper('blockHelperMissing', function(context, options) {
   var inverse = options.inverse || function() {}, fn = options.fn;
 
-
-  var ret = "";
   var type = toString.call(context);
 
   if(type === functionType) { context = context.call(this); }
@@ -164,7 +167,7 @@ Handlebars.registerHelper('log', function(context, options) {
   Handlebars.log(level, context);
 });
 
-}(this.Handlebars));
+}(Handlebars));
 ;
 // lib/handlebars/utils.js
 
@@ -228,8 +231,10 @@ Handlebars.SafeString.prototype.toString = function() {
       }
     }
   };
-})();;
+})();
+;
 // lib/handlebars/runtime.js
+
 Handlebars.VM = {
   template: function(templateSpec) {
     // Just add water
@@ -250,15 +255,30 @@ Handlebars.VM = {
       },
       programWithDepth: Handlebars.VM.programWithDepth,
       noop: Handlebars.VM.noop,
-      compiledVersion: null
+      compilerInfo: null
     };
 
     return function(context, options) {
       options = options || {};
       var result = templateSpec.call(container, Handlebars, context, options.helpers, options.partials, options.data);
-      if (container.compiledVersion !== Handlebars.VERSION) {
-        throw "Template was compiled with "+(container.compiledVersion || 'unknown version')+", but runtime is "+Handlebars.VERSION;
+
+      var compilerInfo = container.compilerInfo || [],
+          compilerRevision = compilerInfo[0] || 1,
+          currentRevision = Handlebars.COMPILER_REVISION;
+
+      if (compilerRevision !== currentRevision) {
+        if (compilerRevision < currentRevision) {
+          var runtimeVersions = Handlebars.REVISION_CHANGES[currentRevision],
+              compilerVersions = Handlebars.REVISION_CHANGES[compilerRevision];
+          throw "Template was precompiled with an older version of Handlebars than the current runtime. "+
+                "Please update your precompiler to a newer version ("+runtimeVersions+") or downgrade your runtime to an older version ("+compilerVersions+").";
+        } else {
+          // Use the embedded version info since the runtime doesn't know about this revision yet
+          throw "Template was precompiled with a newer version of Handlebars than the current runtime. "+
+                "Please update your runtime to a newer version ("+compilerInfo[1]+").";
+        }
       }
+
       return result;
     };
   },
