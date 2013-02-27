@@ -20,7 +20,7 @@
   "dependencies": {
     "coffee-script": "1.4.0",
     "handlebars": "1.0.9",
-    "emblem": "0.1.6"
+    "emblem": "git://github.com/machty/emblem.js.git"
   },
   "devDependencies": {
     "mocha": "1.8.1",
